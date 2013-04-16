@@ -100,11 +100,17 @@ module RackspaceService
         ui.confirm("Do you really want to create this load balancer")
       end
 
-      node_ips = get_node_ips({
-        :by_search     => config[:add_nodes_by_search],
-        :by_name       => config[:add_nodes_by_name],
-        :by_private_ip => config[:add_nodes_by_private_ip]
-      })
+      unless node_ips.empty?
+        ui.fatal("No Chef Nodes found!")
+        ui.fatal("Specified nodes must be registered with following Chef Server: #{Chef::Config[:chef_server_url]}")
+        exit 2
+      else
+        node_ips = get_node_ips({
+          :by_search     => config[:add_nodes_by_search],
+          :by_name       => config[:add_nodes_by_name],
+          :by_private_ip => config[:add_nodes_by_private_ip]
+        })
+      end
 
       nodes = node_ips.map do |ip|
         {
@@ -124,7 +130,6 @@ module RackspaceService
       loadbalancer_name = name_args.first
       options = { :algorithm => config[:algorithm], :connection_logging => config[:connection_logging]}
 
-      # TODO:
       loadbalancer = connection.create_load_balancer(loadbalancer_name, config[:protocol],
         config[:lb_port], vips, nodes, options)
 
