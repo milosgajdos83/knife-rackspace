@@ -97,7 +97,7 @@ module RackspaceService
       end
       
       unless config[:force]
-        ui.confirm("Do you really want to create this load balancer")
+        ui.confirm("Do you really want to create this load balancer ")
       end
 
       node_ips = get_node_ips({
@@ -122,7 +122,8 @@ module RackspaceService
       end
 
       loadbalancer_name = name_args.first
-      options = { :algorithm => config[:algorithm], :connection_logging => config[:connection_logging]}
+      options = { :algorithm => config[:algorithm], 
+        :connection_logging => config[:connection_logging]}
 
       # TODO:
       loadbalancer = connection.create_load_balancer(loadbalancer_name, config[:protocol],
@@ -130,8 +131,7 @@ module RackspaceService
 
       loadbalancer_id = loadbalancer.body["loadBalancer"]["id"]
 
-      ui.output(ui.color("Created load balancer #{loadbalancer_name}. 
-        Load Balancer ID: #{loadbalancer_id}", :green))
+      ui.output(ui.color("Created load balancer #{loadbalancer_name}.Load Balancer ID: #{loadbalancer_id}", :green, :bold))
 
     end
   end

@@ -11,13 +11,13 @@ module RackspaceService
 
     def run
       load_balancer_list = [
-        ui.color("Id", :bold),
-        ui.color("Name", :bold),
-        ui.color("Nodes", :bold),
-        ui.color("Virtual IP", :bold),
-        ui.color("Protocol / Port", :bold),
-        ui.color("Algorithm", :bold),
-        ui.color("Status", :bold)
+        ui.color("Id", :bold, :cyan),
+        ui.color("Name", :bold, :cyan),
+        ui.color("Nodes", :bold, :cyan),
+        ui.color("Virtual IP", :bold, :cyan),
+        ui.color("Protocol / Port", :bold, :cyan),
+        ui.color("Algorithm", :bold, :cyan),
+        ui.color("Status", :bold, :cyan)
       ]
 
       loadbalancers = connection.list_load_balancers.body["loadBalancers"]

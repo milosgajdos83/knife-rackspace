@@ -24,8 +24,15 @@ module RackspaceService
   class RackspaceLoadbalancerShow < Chef::Knife
   	
   	include Chef::Knife::RackspaceLoadBalancerBase
+    include Chef::Knife::RackspaceLoadBalancerNodes
 
-    banner "knife rackspace loadbalancer show ID"
+    banner "knife rackspace loadbalancer show ID (options)"
+
+    option :resolve_node_names,
+      :long => "--resolve-node-names",
+      :description => "Resolve node names via Chef search",
+      :boolean => true | false,
+      :default => false
 
     def run
       
@@ -55,20 +62,23 @@ module RackspaceService
       puts "#{ui.color("Connection Caching ", :cyan)}: #{loadbalancer["contentCaching"]["enabled"]}"
       puts "#{ui.color("Created ", :cyan)}: #{loadbalancer["created"]["time"]}"
       puts "#{ui.color("updated ", :cyan)}: #{loadbalancer["updated"]["time"]}"
-      puts "#{ui.color("= Nodes =", :red)} \n"
-      print_rs_entity(loadbalancer["nodes"], node_properties) unless loadbalancer["nodes"].empty?
-      puts "#{ui.color("= Virtual IPs =", :red)}: \n"
-      print_rs_entity(loadbalancer["virtualIps"], vip_properties) unless loadbalancer["virtualIps"].empty?
-
+      puts "\n#{ui.color("=== Virtual IPs ===", :red)}: "
+      print_lb_property("VIP", loadbalancer["virtualIps"], vip_properties) unless loadbalancer["virtualIps"].empty?
+      puts "\n#{ui.color("=== Nodes ===", :red)} "
+      print_lb_property("Node", loadbalancer["nodes"], node_properties) unless loadbalancer["nodes"].empty?
     end
 
-    def print_rs_entity(entity, properties)
-      entity.each do |e|
-        properties.each do |p|
-          puts "#{ui.color("#{p.capitalize}", :cyan)}: #{e[p]}"
+    def print_lb_property(property, property_data, property_keys)
+      property_data.each_with_index do |p, i|
+        puts "#{ui.color("#{property} #{i}", :cyan, :bold)} \n"
+        if property =~ /Node/ && config[:resolve_node_names]
+          node_name = resolve_node_name_from_ip(p["address"])
+          puts "#{ui.color("Node Name", :cyan)}: #{node_name}" unless node_name.nil?
+        end
+        property_keys.each do |k|
+          puts "#{ui.color("#{k.capitalize}", :cyan)}: #{p[k]}"
         end
       end
     end
-  
   end
 end

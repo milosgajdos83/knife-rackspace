@@ -46,11 +46,16 @@ class Chef
         end
 
         if options[:by_private_ip]
-          node_ips = config[:by_private_ip].split(",")
+          node_ips.concat(options[:by_private_ip].split(","))
         end
 
         # No duplicates!
         node_ips.uniq
+      end
+
+      def resolve_node_name_from_ip(ip)
+        nodes = search_nodes("network_interfaces_eth1_addresses:#{ip}")
+        nodes.first.fqdn unless nodes.nil?
       end
 
       private
