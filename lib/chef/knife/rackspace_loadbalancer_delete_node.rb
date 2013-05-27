@@ -71,15 +71,25 @@ module RackspaceService
       end
 
       loadbalancer = connection.get_load_balancer(config[:lb_id]).body["loadBalancer"]
-      lb_nodes = loadbalancer["nodes"].map do |lb_node| 
-        # I'D LIKE A HASH - NOT ARRAY OF HASHES
-        { lb_node[:address] => lb_node[:id] }
+      # keys are IP addresses, values are node ids
+      lb_nodes = Hash[loadbalancer["nodes"].map { |n| [ n[:address], n[:id] ] }]
+
+      nodes_to_remove = {}
+      node_ips.each do |ip|
+        if ! lb_nodes.keys.include?(ip)
+          ui.warn("#{ip} is not int the #{config[:lb_id]} Load Balancer pool")
+        end
+        nodes_to_remove[ip] = lb_nodes[ip]
       end
-      
-      ###################
-      # TO BE CONTINUED #
-      ###################
-      ui.output(ui.color("Complete", :green))
+
+      ui.warn("Removing #{nodes_to_remove.keys.join(',')} from Load Balancer #{config[:lb_id]}")
+      response = connection.delete_nodes(config[:lb_id],nodes_to_remove.values)
+      if [200,202].include?(response.status)
+        ui.output(ui.color("Node deletion sucessful", :green, :bold))
+      else
+        ui.output(ui.color("Node deletion failed", :red, :bold))
+      end
+
     end
   end
 end
