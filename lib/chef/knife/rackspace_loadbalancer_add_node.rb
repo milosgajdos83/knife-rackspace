@@ -65,7 +65,7 @@ module RackspaceService
         exit 2
       end
 
-      node_ips = resolve_node_ips_from_config({
+      node_ips = get_node_ips({
         :by_search     => config[:by_search],
         :by_name       => config[:by_name],
         :by_private_ip => config[:by_private_ip]
