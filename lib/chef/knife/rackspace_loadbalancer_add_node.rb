@@ -74,14 +74,14 @@ module RackspaceService
       nodes = node_ips.map do |ip|
         {
           :address => ip,
-          :port => config[:auto_resolve_port] ? config[:node_port] : nil,
+          :port => config[:auto_resolve_port] ? "port" : config[:node_port],
           :condition => config[:node_condition],
           :weight => config[:weight]
         }
       end
 
       if nodes.empty?
-        ui.fatal("Chef has not found any of the specified nodes")
+        ui.fatal("Chef search has not returned any of the specified nodes")
         exit 3
       end
 
@@ -92,7 +92,7 @@ module RackspaceService
       end
 
       if ! loadbalancers.include? config[:lb_id]
-        ui.fatal("Could not find #{config[:lb_id]} in your Rackspace Cloud account")
+        ui.fatal("Could not find Load Balancer #{config[:lb_id]} in your Rackspace Cloud account")
         exit 5
       end
 
@@ -100,10 +100,35 @@ module RackspaceService
         ui.confirm("Do you really want to add these nodes")
       end
 
+      loadbalancer = connection.get_load_balancer(config[:lb_id]).body["loadBalancer"]
+      lb_nodes = loadbalancer["nodes"]
+      lb_nodes_ips = lb_nodes.map {|lb_node| lb_node[:address]}
       
+      if config[:auto_resolve_port]
+        nodes.each do |n|
+          n[:port] = lb_nodes.first[:port]
+        end
+      end
+      
+      nodes_for_lb = nodes.reject do |node|
+        if lb_nodes_ips.include?(node[:address])
+          ui.warn("#{node[:address]} is already behind #{config[:lb_id]} Load Balancer")
+        end
+        lb_nodes_ips.include?(node[:address])
+      end
 
+      unless nodes_for_lb.empty?
+        nodes_for_lb.each do |node|
+          ui.output(ui.color("Adding node[:address] to Load Balancer #{config[:lb_id]} pool", :green, :bold))
+          response = connection.create_node(node[:address], node[:port], node[:condition], node[:weight])
+          if [200,202].include?(response.status)
+                ui.output(ui.color("node[:address] added successfully", :green, :bold))
+          else
+                ui.output(ui.color("node[:address] addition failed", :red, :bold))
+          end
+        end
+      end
+      ui.output(ui.color("Complete", :green))
     end
-
   end
 end
-
